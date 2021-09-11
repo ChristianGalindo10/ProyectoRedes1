@@ -11,7 +11,8 @@ CORS(app)
 #Config Twint
 c = twint.Config()
 c.Store_object = True
-c.Limit = 100
+c.Limit = 10
+c.Count = 10
 
 tweets = []
 t_data = {} #dictionary for twitter data
@@ -31,6 +32,9 @@ def generate_lang_data(lang):
 def get_tweets(keyword,lang):
     global tweets, t_data, my_json,lang_data
     tweets.clear()
+    lang_data.clear()
+    my_json["tweets"].clear()
+    twint.output.clean_lists()
     if keyword is not None:
         if lang != 'any':
             c.Search = keyword
@@ -38,9 +42,8 @@ def get_tweets(keyword,lang):
         else:
             c.Search = keyword
         twint.run.Search(c)
-        public_tweets = twint.output.tweets_list   
-    lang_data.clear()
-    my_json["tweets"].clear()
+        public_tweets = twint.output.tweets_list
+        c.Lang = None
     for tweet in public_tweets:
         tweets.append(tweet.tweet)
         t_data = {
