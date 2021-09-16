@@ -5,3 +5,4 @@ class KeywordForm(Form):
         validators.Required(message = "This field is required!")
     ])
     language = StringField('Language')
+    place = StringField('Place')

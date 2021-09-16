@@ -24,7 +24,7 @@
     </div>
     <div class="row">
       <div class="col-sm-12">
-        {% from "_macro.html" import render_field %}
+        <!-- {% from "_macro.html" import render_field %}
         <form class="form-group justify-content-center" action="#" id="tweet">
           <div class="row-control-group">
             <div class="form-group floating-label-form-group controls">
@@ -36,8 +36,25 @@
               {{render_field(form.language, class="form-control", placeholder="Enter language", id="language", style="margin-right:1%;", pattern="[a-z]{2}", title="Give an ISO 639-1 code. e.g. en for english")}}
             </div>
           </div>
-          <!-- <input type="text" class="form-control" placeholder="Enter keyword" id="keyword" required
-            style="margin-right: 1%;" /> -->
+          <input type="text" class="form-control" placeholder="Enter keyword" id="keyword" required
+            style="margin-right: 1%;" />
+          <button type="submit" class="btn btn-primary">Submit</button>
+        </form> -->
+        {% from "_macro.html" import render_field %}
+        <form action="#" id="tweet">
+          <div class="form-row">
+            <div class="col">
+              {{render_field(form.keyword, class="form-control", placeholder="Enter Keyword", id="keyword", style="margin-right:1%;")}}
+            </div>
+            <div class="col">
+              {{render_field(form.language, class="form-control", placeholder="Enter language", id="language", style="margin-right:1%;", pattern="[a-z]{2}", title="Give an ISO 639-1 code. e.g. en for english")}}
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="col">
+              {{render_field(form.place, class="form-control", placeholder="Enter Place", id="place", style="margin-right:1%;")}}
+            </div>
+          </div>
           <button type="submit" class="btn btn-primary">Submit</button>
         </form>
       </div>
@@ -56,6 +73,20 @@
       <div class="col-sm-6">
         <div id="lan">
           <div id="lchart"></div>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-sm-12">
+        <div id="region">
+          <div id="rchart"></div>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-sm-12">
+        <div id="calendar">
+          <div id="calendar_basic"></div>
         </div>
       </div>
     </div>
