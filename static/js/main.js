@@ -1,7 +1,7 @@
 import { languagesList } from "./_languagesList.js";
 google.charts.load("current", {
   packages: ["corechart", "geochart", "calendar"],
-  'mapsApiKey': 'AIzaSyAMGlIzu-uy-cWpLeXiBgJb229UzYRMZLM'
+  'mapsApiKey': ''
 });
 var url = "http://127.0.0.1:5000/get?query=";
 var url_del = "http://127.0.0.1:5000/del";
