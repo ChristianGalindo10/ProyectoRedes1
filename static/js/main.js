@@ -1,8 +1,10 @@
 import { languagesList } from "./_languagesList.js";
 google.charts.load("current", {
   packages: ["corechart", "geochart", "calendar"],
+  'mapsApiKey': 'AIzaSyAMGlIzu-uy-cWpLeXiBgJb229UzYRMZLM'
 });
 var url = "http://127.0.0.1:5000/get?query=";
+var url_del = "http://127.0.0.1:5000/del";
 var positive,
   negative,
   neutral = 0;
@@ -12,16 +14,25 @@ $("#tweet").submit(function (e) {
   var keyword = $("#keyword")[0].value;
   var language = $("#language")[0].value.replace(/ /g, "");
   var place = $("#place")[0].value;
-  console.log(language);
+  var user = $("#user")[0].value;
+  var since = $("#since")[0].value;
+  var until = $("#until")[0].value;
+  var since_year = since.split('-')[0];
+  var until_year = until.split('-')[0];
+  since_year = parseInt(since_year,10);
+  until_year = parseInt(until_year,10);
+  var u;
+  u = url;
   if (keyword.length > 0) {
-    $("#schart").html("");
+    u += keyword;
+  }
+  $("#schart").html("");
     $("#lchart").html("");
+    $("#rchart").html("");
     $("#calendar_basic").html("");
     $("#tweet_heading").html("");
     $("#tweet_body").html("");
     $(".loader-container").css("display", "block");
-    var u;
-    u = url + keyword;
     if (language.length > 0) {
       language = language.toLowerCase();
       if (languagesList.find((l) => l.code === language) != undefined) {
@@ -32,6 +43,15 @@ $("#tweet").submit(function (e) {
     }
     if (place.length > 0) {
       u += "&place=" + place;
+    }
+    if (user.length > 0) {
+      u += "&user=" + user;
+    }
+    if (since.length > 0) {
+      u += "&since=" + since;
+    }
+    if (until.length > 0) {
+      u += "&until=" + until;
     }
     $.ajax({
       url: u,
@@ -44,14 +64,24 @@ $("#tweet").submit(function (e) {
         neutral = response["Sentiment"]["neutral"];
         schart(positive, negative, neutral);
         language_chart(response["Languages"]);
-        //drawRegionsMap(response["Regions"]);
-        drawCalendar(response["Tweets"]["tweets"]);
+        drawRegionsMap(response["Regions"]);
+        drawCalendar(response["Tweets"]["tweets"],since_year,until_year);
         aux_tweets = response["Tweets"]["tweets"];
         tweets(response["Tweets"]["tweets"]);
         $(".loader-container").css("display", "none");
       },
     });
-  }
+});
+
+$("#delete").submit(function (e) {
+  e.preventDefault();
+    $.ajax({
+      url: url_del,
+      type: "POST",
+      success: function (response) {
+        window.location.href = "http://127.0.0.1:5000/"
+       },
+    });
 });
 
 function schart(pos, neg, neu) {
@@ -125,14 +155,15 @@ function language_chart(lang_data) {
 function drawRegionsMap(region_data) {
   var region_obj = JSON.parse(JSON.stringify(region_data));
   var data = new google.visualization.DataTable();
-  data.addColumn("string", "City");
-  data.addColumn("number", "Count");
+  data.addColumn("string", "Country");
+  data.addColumn("number", "Polarity");
   var rData = [];
   for (let key in region_obj) {
     if (region_obj.hasOwnProperty(key)) {
-      rData.push([key, region_obj[key]]);
+      rData.push([key, (region_obj[key][1]/region_obj[key][0])]);
     }
   }
+  console.log(rData);
   data.addRows(rData);
   var options = {};
 
@@ -143,8 +174,11 @@ function drawRegionsMap(region_data) {
   chart.draw(data, options);
 }
 
-function drawCalendar(tweets) {
+function drawCalendar(tweets,since,until) {
   //var region_obj = JSON.parse(JSON.stringify(region_data));
+  var diference = until-since;
+  var dateData = []
+  console.log(until,since,diference);
   var data = new google.visualization.DataTable();
   data.addColumn({ type: 'date', id: 'Date' });
   data.addColumn({ type: 'number', id: 'Won/Loss' });
@@ -166,17 +200,29 @@ function drawCalendar(tweets) {
   // ]);
   var calendarData = [];
   var pol;
+  var t_count;
   $.each(tweets, function (key, value) {
-    if (tweets[key]["polarity"]=="Positive"){
-      pol = 1;
-    }else if(tweets[key]["polarity"]=="Neutral"){
-      pol = 0;
-    }else{
-      pol = -1;
+    if(!dateData.includes(tweets[key]["created_at"])){
+      dateData.push(tweets[key]["created_at"]);
     }
-    calendarData.push([new Date(tweets[key]["created_at"]),pol]);
   });
-  console.log(calendarData);
+  $.each(dateData, function (indice,elemento){
+    pol = 0;
+    t_count = 0;
+    $.each(tweets, function (key, value) {
+      if(tweets[key]["created_at"]==elemento){
+        if (tweets[key]["polarity"]=="Positive"){
+          pol += 1;
+        }else if(tweets[key]["polarity"]=="Neutral"){
+          pol += 0;
+        }else{
+          pol -= 1;
+        }
+        t_count+=1;
+      }
+    });
+    calendarData.push([new Date(elemento),(pol/t_count)]);
+  });
   data.addRows(calendarData);
 
   var chart = new google.visualization.Calendar(
@@ -185,7 +231,7 @@ function drawCalendar(tweets) {
 
   var options = {
     title: 'Feelings Calendar',
-    height: 350,
+    height: 190+(145*diference),
     calendar: {
       monthLabel: {
         fontName: 'Times-Roman',
@@ -214,6 +260,7 @@ function drawCalendar(tweets) {
   };
 
   chart.draw(data, options);
+  //$('#calendar_basic').find("svg").css( "height", "auto" );
 }
 
 function tweets(tweets) {
@@ -250,6 +297,7 @@ function tweets(tweets) {
     });
     $('#tweet_body').paginate({
         perPage: 10,
+        autoScroll: false, 
         scope: $('div'),// targets all div elements
       });
   });

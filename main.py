@@ -11,11 +11,11 @@ from datetime import timedelta
 app = Flask(__name__)
 CORS(app)
 # Config Twint
-c = twint.Config()
-c.Store_object = True
-c.Hide_output = True
-#c.Limit = 100
-#c.Count = 100
+# c = twint.Config()
+# c.Store_object = True
+# c.Hide_output = True
+# c.Limit = 100
+# c.Count = 100
 
 tweets = []
 t_data = {}  # dictionary for twitter data
@@ -33,47 +33,56 @@ def generate_lang_data(lang):
         lang_data[lang] = 1
 
 
-def generate_region_data(region):
+def generate_region_data(region,sentiment):
     global region_data
+    if sentiment == "Positive":
+        s = 1
+    elif sentiment == "Negative":
+        s = -1
+    else:
+        s = 0
     if region in region_data:
         val = region_data[region]
-        region_data[region] = val + 1
+        val[0] = val[0]+1
+        val[1] += s
+        region_data[region] = val
     else:
-        region_data[region] = 1
+        val = [0,0]
+        val[0] = 1
+        val[1] = s
+        region_data[region]= val
 
 
-def get_tweets(keyword, lang, place):
-    # since="2017-01-01"
-    #since_date = datetime.strptime(since, '%Y-%m-%d')
-    now = datetime.now()
-    #now_date = now.strftime("%Y-%m-%d")
+def get_tweets(keyword, lang, place, user, since, until):
     global tweets, t_data, my_json, lang_data, region_data
     tweets.clear()
     lang_data.clear()
     region_data.clear()
     my_json["tweets"].clear()
-    twint.output.clean_lists()
-    if keyword is not None:
-        #date = now - timedelta(days=10)
-        c.Search = keyword
-        if lang != 'any':
-            c.Lang = lang
-        if place != 'any':
-            c.Near = place
-        # while (date != now):
-        #     c.Limit = 1
-        #     c.Count = 1
-        #     format_date = date.strftime("%Y-%m-%d")
-        #     c.Until = format_date
-        #     twint.run.Search(c)
-        #     date = date + timedelta(days=1)
-        #     time.sleep(5)
-        c.Limit = 50
-        c.Count = 50
-        twint.run.Search(c)
-        public_tweets = twint.output.tweets_list
-        c.Lang = None
-        c.Near = None
+    c = twint.Config()
+    c.Store_object = True
+    c.Hide_output = True
+    #twint.output.clean_lists()
+    c.Search = keyword
+    if lang != 'any':
+        c.Lang = lang
+    if place != 'any':
+        c.Near = place
+    if user != 'any':
+        c.Username = user
+    if since != 'any':
+        c.Since = since
+    if until != 'any':
+        c.Until = until
+    c.Limit = 100
+    c.Count = 100
+    twint.run.Search(c)
+    public_tweets = twint.output.tweets_list
+    c.Lang = None
+    c.Near = None
+    c.Since = None
+    c.Until = None
+    c.Username = None
     for tweet in public_tweets:
         tweets.append(tweet.tweet)
         t_data = {
@@ -87,7 +96,7 @@ def get_tweets(keyword, lang, place):
             "polarity": sentiment(tweet.tweet)
         }
         generate_lang_data(tweet.lang)
-        # generate_region_data(tweet.place)
+        generate_region_data(tweet.near,sentiment(tweet.tweet))
         my_json["tweets"].append(t_data)
     return tweets
 
@@ -153,13 +162,22 @@ def index():
 def tweets_template():
     return render_template('tweets.html')
 
+@app.route('/del', methods=['GET', 'POST'])
+def delete():
+    twint.output.clean_lists()
+    keyword_form = forms.KeywordForm()
+    return render_template('index.html', form=keyword_form)
+
 
 @app.route('/get', methods=['GET', 'POST'])
 def get():
     query = request.args.get('query')
     lang = request.args.get('lang', 'any')
     place = request.args.get('place', 'any')
-    fetched_tweets = get_tweets(query, lang, place)
+    user = request.args.get('user', 'any')
+    since = request.args.get('since')
+    until = request.args.get('until')
+    fetched_tweets = get_tweets(query, lang, place, user, since, until)
     pol = get_polarity(fetched_tweets)
     return pol
 

@@ -77,6 +77,11 @@
     background-size: 32px;
   }
 
+  .Avatar img{
+    width: 32px;
+    height: 32px;
+  }
+
   .timeline-TweetList-tweet {
     border-top: 1px solid rgba(15, 70, 100, 0.12);
   }
